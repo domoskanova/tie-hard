@@ -4,7 +4,7 @@
 export const knots = [
   {
     id: 'butterfly',
-    name: 'Бабочка',
+    name: 'Бабочка проверка',
     aka: '',
     verified: false,
     check: '',
