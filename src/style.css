@@ -28,8 +28,20 @@ body {
   padding: 1rem;
 }
 
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
 h1 {
   font-size: clamp(1.8rem, 8vw, 4rem);
   font-weight: 700;
   letter-spacing: 0.5px;
+}
+
+.greeting {
+  font-size: clamp(1rem, 4vw, 1.5rem);
+  opacity: 0.85;
 }
