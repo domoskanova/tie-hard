@@ -24,62 +24,105 @@ if (tg) {
   greeting = 'Открой через бота в Telegram';
 }
 
+// === СТАТУСЫ УЗЛОВ (только в памяти сессии; CloudStorage — отдельный этап) ===
+// Три значения: 'new' (не начат) / 'studied' (изучен) / 'passed' (пройден).
+const STATUS = { new: 'new', studied: 'studied', passed: 'passed' };
+const STATUS_LABEL = {
+  new: 'не начат',
+  studied: 'изучен',
+  passed: 'пройден',
+};
+// Статус хранится по id узла.
+const statuses = {};
+knots.forEach((k) => {
+  statuses[k.id] = STATUS.new;
+});
+
+function markStudied(id) {
+  // «Изучен» ставим только если был «не начат» — «пройден» не понижаем.
+  if (statuses[id] === STATUS.new) {
+    statuses[id] = STATUS.studied;
+  }
+}
+
+function markPassed(id) {
+  statuses[id] = STATUS.passed;
+}
+
 const app = document.querySelector('#app');
 
-// Каркас: два экрана на одной странице, переключаются видимостью (класс hidden).
-// Без роутера. Список узлов рендерится перебором массива из knots.js.
-const listItems = knots
-  .map((knot, i) => `<li class="knot" data-index="${i}">${knot.name}</li>`)
-  .join('');
-
+// Каркас: четыре экрана на одной странице, переключаются видимостью (класс hidden).
+// Без роутера.
 app.innerHTML = `
   <section id="list-screen" class="screen">
     <h1>Tie Hard</h1>
     <p class="greeting">${greeting}</p>
-    <ul class="knots">${listItems}</ul>
+    <ul class="knots" id="knots-list"></ul>
   </section>
   <section id="knot-screen" class="screen knot-screen hidden"></section>
+  <section id="quiz-screen" class="screen knot-screen hidden"></section>
+  <section id="result-screen" class="screen knot-screen hidden"></section>
 `;
 
-const listScreen = document.querySelector('#list-screen');
-const knotScreen = document.querySelector('#knot-screen');
+const SCREENS = ['list-screen', 'knot-screen', 'quiz-screen', 'result-screen'];
+function showScreen(id) {
+  SCREENS.forEach((s) => {
+    document.getElementById(s).classList.toggle('hidden', s !== id);
+  });
+  window.scrollTo(0, 0);
+}
 
-// Состояние экрана узла.
+const knotsList = document.querySelector('#knots-list');
+
+// === ЭКРАН СПИСКА ===
+// Список рендерится перебором массива; статус — из состояния. Перерисовываем при возврате.
+function renderList() {
+  knotsList.innerHTML = knots
+    .map((knot, i) => {
+      const status = statuses[knot.id];
+      return `
+        <li class="knot" data-index="${i}">
+          <span class="knot-name">${knot.name}</span>
+          <span class="status status-${status}">${STATUS_LABEL[status]}</span>
+        </li>`;
+    })
+    .join('');
+}
+
+knotsList.addEventListener('click', (event) => {
+  const li = event.target.closest('.knot');
+  if (li) {
+    openKnot(Number(li.dataset.index));
+  }
+});
+
+// === ЭКРАН УЗЛА (изучение) ===
+const knotScreen = document.querySelector('#knot-screen');
 let currentKnot = null;
 let currentStep = 0;
-
-function showList() {
-  knotScreen.classList.add('hidden');
-  listScreen.classList.remove('hidden');
-}
 
 function openKnot(index) {
   currentKnot = knots[index];
   currentStep = 0;
+  markStudied(currentKnot.id); // открытие узла = «изучен»
   renderKnot();
-  listScreen.classList.add('hidden');
-  knotScreen.classList.remove('hidden');
-  window.scrollTo(0, 0);
+  showScreen('knot-screen');
 }
 
 function renderKnot() {
   const k = currentKnot;
-  const total = k.steps.length; // число шагов берём из длины массива
+  const total = k.steps.length; // число шагов из длины массива
 
-  // aka — строкой под названием; если пусто, блок прячем (просто не выводим).
   const akaHtml = k.aka ? `<p class="aka">${k.aka}</p>` : '';
 
-  // usage — списком; если пусто, показываем placeholder.
   const usageHtml = k.usage.length
     ? `<ul class="usage">${k.usage.map((u) => `<li>${u}</li>`).join('')}</ul>`
     : `<p class="placeholder">Применение появится позже</p>`;
 
-  // common_mistake — отдельным блоком; если пусто, placeholder «—».
   const mistakeHtml = k.common_mistake
     ? `<p class="mistake">${k.common_mistake}</p>`
     : `<p class="placeholder">—</p>`;
 
-  // Листание шагов: по одному шагу на экране.
   let stepsBlock;
   if (total === 0) {
     stepsBlock = `<p class="placeholder">Шаги появятся позже</p>`;
@@ -99,6 +142,12 @@ function renderKnot() {
     `;
   }
 
+  // Кнопка входа в квиз; неактивна, если вопросов нет.
+  const hasQuiz = k.quiz.length > 0;
+  const quizBtn = `<button id="start-quiz" class="primary" ${hasQuiz ? '' : 'disabled'}>
+      ${hasQuiz ? 'Пройти квиз' : 'Квиз появится позже'}
+    </button>`;
+
   knotScreen.innerHTML = `
     <button id="back-to-list" class="back">← К списку</button>
     <h1 class="knot-title">${k.name}</h1>
@@ -109,10 +158,10 @@ function renderKnot() {
     ${mistakeHtml}
     <h2 class="section-title">Как вязать</h2>
     ${stepsBlock}
+    ${quizBtn}
   `;
 
-  // Навешиваем обработчики на свежую разметку.
-  knotScreen.querySelector('#back-to-list').addEventListener('click', showList);
+  knotScreen.querySelector('#back-to-list').addEventListener('click', goToList);
 
   const prev = knotScreen.querySelector('#prev-step');
   const next = knotScreen.querySelector('#next-step');
@@ -132,12 +181,98 @@ function renderKnot() {
       }
     });
   }
+
+  const quizStart = knotScreen.querySelector('#start-quiz');
+  if (hasQuiz) {
+    quizStart.addEventListener('click', startQuiz);
+  }
 }
 
-// Клик по узлу в списке (делегирование) — открываем его экран.
-listScreen.querySelector('.knots').addEventListener('click', (event) => {
-  const li = event.target.closest('.knot');
-  if (li) {
-    openKnot(Number(li.dataset.index));
+// Возврат к списку с перерисовкой (чтобы смена статуса была видна).
+function goToList() {
+  renderList();
+  showScreen('list-screen');
+}
+
+// === ЭКРАН КВИЗА ===
+const quizScreen = document.querySelector('#quiz-screen');
+let quizIndex = 0;
+let quizCorrect = 0;
+
+function startQuiz() {
+  quizIndex = 0;
+  quizCorrect = 0;
+  renderQuiz();
+  showScreen('quiz-screen');
+}
+
+function renderQuiz() {
+  const quiz = currentKnot.quiz;
+  const total = quiz.length;
+  const item = quiz[quizIndex];
+
+  const optionsHtml = item.options
+    .map(
+      (opt, i) => `<button class="quiz-option" data-option="${i}">${opt}</button>`,
+    )
+    .join('');
+
+  quizScreen.innerHTML = `
+    <h1 class="knot-title">${currentKnot.name}</h1>
+    <p class="step-counter">Вопрос ${quizIndex + 1} из ${total}</p>
+    <p class="quiz-question">${item.q}</p>
+    <div class="quiz-options">${optionsHtml}</div>
+  `;
+
+  quizScreen.querySelector('.quiz-options').addEventListener('click', (event) => {
+    const btn = event.target.closest('.quiz-option');
+    if (!btn) return;
+    // Сверяем индекс выбранного варианта с correct (индекс с нуля).
+    if (Number(btn.dataset.option) === item.correct) {
+      quizCorrect += 1;
+    }
+    quizIndex += 1;
+    if (quizIndex < total) {
+      renderQuiz();
+    } else {
+      finishQuiz();
+    }
+  });
+}
+
+// === ЭКРАН РЕЗУЛЬТАТА ===
+const resultScreen = document.querySelector('#result-screen');
+const PASS_THRESHOLD = 0.8; // порог сдачи — 80%
+
+function finishQuiz() {
+  const total = currentKnot.quiz.length;
+  const ratio = quizCorrect / total;
+  const passed = ratio >= PASS_THRESHOLD;
+
+  if (passed) {
+    markPassed(currentKnot.id); // статус «пройден»; при провале статус не трогаем
   }
-});
+
+  const verdictClass = passed ? 'verdict-pass' : 'verdict-fail';
+  const verdictText = passed ? 'Сдано' : 'Не сдано';
+  const retryBtn = passed
+    ? ''
+    : `<button id="retry-quiz" class="primary">Пройти заново</button>`;
+
+  resultScreen.innerHTML = `
+    <h1 class="knot-title">${currentKnot.name}</h1>
+    <p class="verdict ${verdictClass}">${verdictText}</p>
+    <p class="score">Верных ${quizCorrect} из ${total}</p>
+    ${retryBtn}
+    <button id="result-to-list" class="back">К списку</button>
+  `;
+
+  resultScreen.querySelector('#result-to-list').addEventListener('click', goToList);
+  const retry = resultScreen.querySelector('#retry-quiz');
+  if (retry) {
+    retry.addEventListener('click', startQuiz);
+  }
+}
+
+// Первый рендер списка.
+renderList();

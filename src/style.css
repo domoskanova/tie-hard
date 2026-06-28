@@ -75,10 +75,36 @@ h1 {
   padding: 0.9rem 1.1rem;
   font-size: 1.1rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  text-align: left;
 }
 
 .knot:active {
   background: #262626;
+}
+
+/* Статус-метка узла в списке. */
+.status {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+
+.status-new {
+  color: #8a8a8a;
+}
+
+.status-studied {
+  color: #ffc400;
+}
+
+.status-passed {
+  color: #4caf50;
 }
 
 /* --- Экран узла --- */
@@ -187,4 +213,75 @@ h1 {
   background: #1d1d1d;
   color: #fff;
   cursor: pointer;
+}
+
+/* Акцентная кнопка (вход в квиз, перепрохождение). */
+.primary {
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  background: #ffc400;
+  color: #111;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  background: #1d1d1d;
+  color: #fff;
+  border: 1px solid #2e2e2e;
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- Экран квиза --- */
+.quiz-question {
+  font-size: 1.2rem;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.quiz-option {
+  padding: 0.9rem 1.1rem;
+  font-size: 1.05rem;
+  text-align: left;
+  border: 1px solid #2e2e2e;
+  border-radius: 12px;
+  background: #1d1d1d;
+  color: #fff;
+  cursor: pointer;
+}
+
+.quiz-option:active {
+  background: #262626;
+}
+
+/* --- Экран результата --- */
+.verdict {
+  text-align: center;
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.verdict-pass {
+  color: #4caf50;
+}
+
+.verdict-fail {
+  color: #e8472b;
+}
+
+.score {
+  text-align: center;
+  font-size: 1.2rem;
+  opacity: 0.85;
 }
