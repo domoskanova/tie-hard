@@ -1,4 +1,5 @@
 import './style.css';
+import { knots } from './knots.js';
 
 // Telegram Web App SDK подключён скриптом в index.html.
 // window.Telegram.WebApp есть только когда страницу открыли внутри Telegram.
@@ -23,9 +24,15 @@ if (tg) {
   greeting = 'Открой через бота в Telegram';
 }
 
+// Список узлов рендерится перебором массива из knots.js — названия не зашиты в разметку.
+const list = knots
+  .map((knot) => `<li class="knot">${knot.name}</li>`)
+  .join('');
+
 document.querySelector('#app').innerHTML = `
   <div class="screen">
-    <h1>Tie Hard работает</h1>
+    <h1>Tie Hard</h1>
     <p class="greeting">${greeting}</p>
+    <ul class="knots">${list}</ul>
   </div>
 `;
