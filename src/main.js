@@ -272,6 +272,8 @@ function finishQuiz() {
   if (retry) {
     retry.addEventListener('click', startQuiz);
   }
+
+  showScreen('result-screen'); // переключаемся на экран результата
 }
 
 // Первый рендер списка.
