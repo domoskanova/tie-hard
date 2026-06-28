@@ -26,9 +26,11 @@ body {
   padding: 1rem;
 }
 
-/* Переключение экранов без роутера — простым скрытием. */
+/* Переключение экранов без роутера — простым скрытием.
+   !important нужен, чтобы утилита перебивала display у селекторов
+   по id (#list-screen / .knot-screen), которые специфичнее обычного класса. */
 .hidden {
-  display: none;
+  display: none !important;
 }
 
 .screen {
