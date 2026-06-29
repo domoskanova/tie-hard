@@ -156,9 +156,11 @@ h1 {
 .step-canvas {
   display: block;
   width: 100%;
-  max-width: 220px;
+  max-width: 240px;
   height: auto;
   margin: 0.25rem auto 0;
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .step-canvas-num {

@@ -127,12 +127,17 @@ function renderKnot() {
   if (total === 0) {
     stepsBlock = `<p class="placeholder">Шаги появятся позже</p>`;
   } else {
-    stepsBlock = `
-      <!-- Заглушка SVG-схемы: пропорции холста из стиль-гайда 400×640 (5:8). -->
-      <svg class="step-canvas" viewBox="0 0 400 640" role="img" aria-label="Схема шага ${currentStep + 1}">
+    // Если у узла есть нарисованная схема текущего шага — показываем её.
+    // Иначе (узлы без svgSteps) остаётся серая заглушка с номером шага.
+    const schema =
+      k.svgSteps && k.svgSteps[currentStep]
+        ? k.svgSteps[currentStep]
+        : `<svg class="step-canvas" viewBox="0 0 400 640" role="img" aria-label="Схема шага ${currentStep + 1}">
         <rect x="0" y="0" width="400" height="640" rx="16" fill="#3a3a3a" />
         <text x="200" y="320" class="step-canvas-num">${currentStep + 1}</text>
-      </svg>
+      </svg>`;
+    stepsBlock = `
+      ${schema}
       <p class="step-counter">Шаг ${currentStep + 1} из ${total}</p>
       <p class="step-text">${k.steps[currentStep]}</p>
       <div class="step-nav">
